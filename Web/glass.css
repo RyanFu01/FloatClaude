@@ -1,0 +1,89 @@
+/*
+ * FloatClaude — glass styles injected into claude.ai.
+ *
+ * The native window draws an NSVisualEffectView (frosted glass) behind a
+ * transparent WKWebView. These rules make the page's own backgrounds
+ * transparent so the glass shows through, while cards, the composer and
+ * menus keep their own fills.
+ *
+ * Elements are tagged at runtime by glass.js:
+ *   [data-fc-glass="clear"]  large plain background  -> transparent
+ *   [data-fc-glass="bar"]    header / composer dock  -> transparent
+ *   [data-fc-fade]           scrolling transcript    -> masked at the edges
+ *   [data-fc-noline]         header divider line     -> hidden
+ */
+
+html,
+body,
+body.bg-surface-1,
+main.dframe-content,
+[data-fc-glass] {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+}
+
+/* In a transparent window, CSS backdrop-filter can't sample the desktop
+   behind it and renders as a flat grey block, so turn it off. */
+[data-fc-glass],
+[data-fc-glass]::before,
+[data-fc-glass]::after {
+  -webkit-backdrop-filter: none !important;
+  backdrop-filter: none !important;
+}
+
+/* No hard divider under the header: top and bottom both use soft fades. */
+[data-fc-noline],
+[data-fc-noline]::before,
+[data-fc-noline]::after {
+  border-bottom-color: transparent !important;
+  box-shadow: none !important;
+}
+
+/* Scrolling content fades in below the header (~28px) and out above the
+   composer (~44px). Multi-stop gradient approximates an ease-in-out curve.
+   --fc-mt / --fc-mb are set per element by glass.js, in that element's own
+   coordinate space, and updated on every scroll frame. */
+[data-fc-fade] {
+  --fc-fade: linear-gradient(to bottom,
+    rgba(0,0,0,0)    calc(var(--fc-mt) + 0px),
+    rgba(0,0,0,0.08) calc(var(--fc-mt) + 4px),
+    rgba(0,0,0,0.28) calc(var(--fc-mt) + 9px),
+    rgba(0,0,0,0.6)  calc(var(--fc-mt) + 15px),
+    rgba(0,0,0,0.85) calc(var(--fc-mt) + 21px),
+    rgba(0,0,0,1)    calc(var(--fc-mt) + 28px),
+    rgba(0,0,0,1)    calc(var(--fc-mb) - 44px),
+    rgba(0,0,0,0.92) calc(var(--fc-mb) - 35px),
+    rgba(0,0,0,0.72) calc(var(--fc-mb) - 26px),
+    rgba(0,0,0,0.42) calc(var(--fc-mb) - 18px),
+    rgba(0,0,0,0.17) calc(var(--fc-mb) - 10px),
+    rgba(0,0,0,0.04) calc(var(--fc-mb) - 4px),
+    rgba(0,0,0,0)    calc(var(--fc-mb) - 0px));
+  -webkit-mask-image: var(--fc-fade);
+  mask-image: var(--fc-fade);
+}
+
+/* Citation chips are solid white by default and shout on glass;
+   make them a quiet translucent neutral that works in both themes. */
+a[class*="group/tag"] > span[class*="rounded-full"] {
+  background-color: rgba(128,128,128,0.13) !important;
+  border-color: rgba(128,128,128,0.16) !important;
+}
+a[class*="group/tag"]:hover > span[class*="rounded-full"] {
+  background-color: rgba(128,128,128,0.24) !important;
+}
+
+/* Sidebar shows the same glass. In a narrow window it slides over the
+   conversation, so fade the conversation out while it's open. */
+.dframe-sidebar-body {
+  background: transparent !important;
+  background-color: transparent !important;
+}
+.dframe-pane { transition: opacity 0.2s ease; }
+html[data-fc-sb-open] .dframe-pane {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+/* macOS overlay scrollbars don't need a reserved gutter. */
+[class*="scrollbar-gutter"] { scrollbar-gutter: auto !important; }
